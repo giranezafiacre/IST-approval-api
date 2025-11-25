@@ -1,0 +1,40 @@
+version: '3.9'
+
+services:
+  web:
+    image: python:3.11-slim
+    container_name: approvalsystem_web
+    command: >
+      sh -c "pip install --no-cache-dir -r requirements.txt &&
+             python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app
+    working_dir: /app
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=approvalsystem.settings
+      - PYTHONUNBUFFERED=1
+
+  redis:
+    image: redis:7
+    container_name: approvalsystem_redis
+    ports:
+      - "6379:6379"
+
+  celery:
+    image: python:3.11-slim
+    container_name: approvalsystem_celery
+    command: >
+      sh -c "pip install --no-cache-dir -r requirements.txt &&
+             celery -A approvalsystem worker -l info"
+    volumes:
+      - .:/app
+    working_dir: /app
+    environment:
+      - DJANGO_SETTINGS_MODULE=approvalsystem.settings
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - web
+      - redis

@@ -188,17 +188,17 @@ class PurchaseRequestViewSet(viewsets.ModelViewSet):
                 pr.save(update_fields=['status'])
 
                 # Get linked Proforma instance
-                if not pr.proforma:
-                   return Response({"detail": "Cannot create PO: no Proforma linked."}, status=400)
-                # generate PO record (PO file generation can be async)
-                po = PurchaseOrder.objects.create(
-                    purchase_request=pr, 
-                    proforma=pr.proforma and Proforma.objects.filter(file=pr.proforma.name).first(),
-                    vendor_name=pr.proforma.vendor_name if pr.proforma else '',
-                    items=pr.proforma.items if pr.proforma else '',
-                    total_amount=pr.proforma.total_amount if pr.proforma else 0,
-                    generated_by=user, 
-                    reference=f"PO-{pr.id}-{int(timezone.now().timestamp())}")
+                if pr.proforma:
+                    PurchaseOrder.objects.create(
+                        purchase_request=pr,
+                        proforma=pr.proforma,
+                        vendor_name=pr.proforma.vendor_name,
+                        items=pr.proforma.items,
+                        total_amount=pr.proforma.total_amount,
+                        generated_by=user,
+                        reference=f"PO-{pr.id}-{int(timezone.now().timestamp())}"
+                    )
+
                 
                 serializer = self.get_serializer(pr)
                 return Response(serializer.data, status=status.HTTP_200_OK)
